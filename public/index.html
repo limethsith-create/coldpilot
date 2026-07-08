@@ -131,6 +131,16 @@
   .badge.ramping{background:rgba(76,194,255,.14);color:var(--blue)}
   .badge.full{background:rgba(45,212,167,.14);color:var(--green)}
   .badge.disabled{background:var(--surface2);color:var(--muted)}
+  .badge.paused{background:rgba(255,93,115,.16);color:var(--red)}
+  .seg{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--surface2);margin:6px 0 14px}
+  .seg i{height:100%}
+  .hl{display:flex;align-items:center;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)}
+  .hl:last-child{border:0}.hl .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:8px}
+  .hl b{font-family:'Space Grotesk';font-variant-numeric:tabular-nums}
+  .checklist .ci{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .checklist .ci:last-child{border:0}.checklist .ci .ok{color:var(--green);flex-shrink:0}
+  .checklist .ci span{color:var(--muted)}
+  .issue{font-size:11.5px;color:var(--red);margin-top:4px}
   .ibx .mini{display:flex;gap:14px;margin-top:10px;font-size:11.5px;color:var(--muted)}
   .ibx .mini b{color:var(--text);font-family:'Space Grotesk';font-weight:600}
 
@@ -229,6 +239,12 @@
         <div class="hd"><h2>Lead Funnel</h2></div>
         <div class="funnel" id="funnel"></div>
       </div>
+    </div>
+
+    <div class="sec-title">Deliverability Protection <span class="ln"></span><span class="cnt">bounce &amp; ban prevention</span></div>
+    <div class="grid2">
+      <div class="card fade"><div class="hd"><h2>List Health</h2><button class="btn" id="verifyBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>Verify list</button></div><div class="body" id="listHealth"></div></div>
+      <div class="card fade"><div class="hd"><h2>Active Protections</h2></div><div class="body checklist" id="protection"></div></div>
     </div>
 
     <div class="sec-title">Mailboxes &amp; Warmup <span class="ln"></span><span class="cnt" id="ibxCount"></span></div>

@@ -98,7 +98,7 @@ function ring(pct, color) {
 
 function inboxes(list) {
   $('#ibxCount').textContent = `${list.filter(i=>i.phase!=='disabled').length} active · ${list.length} total`;
-  const colorFor = p => p === 'full' ? '#2dd4a7' : p === 'ramping' ? '#4cc2ff' : p === 'warming' ? '#ffb547' : '#59617a';
+  const colorFor = p => p === 'full' ? '#2dd4a7' : p === 'ramping' ? '#4cc2ff' : p === 'warming' ? '#ffb547' : p === 'paused' ? '#ff5d73' : '#59617a';
   $('#inboxes').innerHTML = list.map(i => {
     const pct = i.phase === 'disabled' ? 0 : Math.min(1, i.warmupDay / 42);
     const col = colorFor(i.phase);
@@ -111,12 +111,41 @@ function inboxes(list) {
 
 function feed(events) {
   if (!events.length) { $('#feed').innerHTML = `<div class="emptyfeed">Activity will stream here once warmup and sending begin.</div>`; return; }
-  const label = { sent:'Sent', reply:'Reply', open:'Open', click:'Click', bounce:'Bounce', unsubscribe:'Unsubscribe', warmup_sent:'Warmup', warmup_reply:'Warmup reply', warmup_rescued:'Spam rescue', error:'Error', tick:'Engine tick', plan:'Planned' };
+  const label = { sent:'Sent', reply:'Reply', open:'Open', click:'Click', bounce:'Bounce', unsubscribe:'Unsubscribe', warmup_sent:'Warmup', warmup_reply:'Warmup reply', warmup_rescued:'Spam rescue', error:'Error', tick:'Engine tick', plan:'Planned', guardrail:'Inbox paused', skipped:'Skipped' };
   const rel = ts => { const d = (Date.now() - new Date(ts)) / 1000; if (d < 60) return 'just now'; if (d < 3600) return Math.floor(d/60)+'m ago'; if (d < 86400) return Math.floor(d/3600)+'h ago'; return Math.floor(d/86400)+'d ago'; };
   $('#feed').innerHTML = events.map(e => {
-    const detail = e.type === 'tick' ? `${e.meta?.sent ?? 0} emails processed` : e.type === 'error' ? `${e.meta?.where}: ${e.meta?.message}` : e.type === 'warmup_rescued' ? `${e.meta?.count} moved out of spam` : `${e.lead || ''}${e.inbox ? ' · ' + e.inbox : ''}`;
+    const detail = e.type === 'tick' ? `${e.meta?.sent ?? 0} emails processed` : e.type === 'error' ? `${e.meta?.where}: ${e.meta?.message}` : e.type === 'guardrail' ? `${e.inbox} paused — bounce rate ${e.meta?.bounceRate}%` : e.type === 'skipped' ? `${e.lead} — ${e.meta?.reason}` : e.type === 'warmup_rescued' ? `${e.meta?.count} moved out of spam` : `${e.lead || ''}${e.inbox ? ' · ' + e.inbox : ''}`;
     return `<div class="ev ${e.type}"><div class="d"></div><div class="tx"><b>${label[e.type] || e.type}</b> ${detail}<div class="t">${rel(e.ts)}</div></div></div>`;
   }).join('');
+}
+
+
+function renderListHealth(lh) {
+  const el = document.getElementById('listHealth'); if (!el) return;
+  const total = lh.valid + lh.risky + lh.invalid + lh.unchecked;
+  const seg = [['valid','#2dd4a7',lh.valid],['risky','#ffb547',lh.risky],['invalid','#ff5d73',lh.invalid],['unchecked','#59617a',lh.unchecked]];
+  if (!total) { el.innerHTML = '<div class="emptyfeed">Import a lead list, then click <b>Verify list</b> to screen every address before sending — this is what keeps inboxes off the ban list.</div>'; return; }
+  el.innerHTML = '<div class="seg">' + seg.map(([n,c,v]) => v ? `<i style="width:${100*v/total}%;background:${c}" title="${n}: ${v}"></i>` : '').join('') + '</div>' +
+    seg.map(([n,c,v]) => `<div class="hl"><span><span class="dot" style="background:${c}"></span>${n[0].toUpperCase()+n.slice(1)}</span><b>${fmt(v)}</b></div>`).join('') +
+    `<div style="font-size:11.5px;color:var(--muted);margin-top:10px">Invalid addresses are removed automatically so they never bounce. Risky (role) addresses are skipped by default.</div>`;
+}
+function renderProtection(s) {
+  const el = document.getElementById('protection'); if (!el) return;
+  const paused = s.inboxes.filter(i => i.paused).length;
+  const items = [
+    ['Verify-before-send', 'Every address is validated (syntax, MX, disposable, role) before it is emailed — bad addresses never go out.'],
+    ['Auto-pause guardrail', paused ? `${paused} inbox paused — bounce rate crossed the safe line.` : 'Any inbox whose bounce rate passes 4% is paused automatically to protect it from a ban.'],
+    ['Gradual warmup ramp', 'New mailboxes ramp slowly (3→35/day) so providers never see a spike — the #1 suspension trigger.'],
+    ['One-click unsubscribe', 'RFC 8058 header on every email keeps spam complaints under the 0.1% ban threshold.'],
+    ['Human-like sending', 'Randomised timing, weekday business-hours only, hard daily caps per inbox.'],
+  ];
+  el.innerHTML = items.map(([t,d]) => `<div class="ci"><span class="ok">${paused && t==='Auto-pause guardrail' ? '⚠' : '✓'}</span><div><b>${t}</b><br><span>${d}</span></div></div>`).join('');
+}
+async function runVerify(btn) {
+  btn.disabled = true; const orig = btn.innerHTML; btn.innerHTML = 'Verifying…';
+  try { const r = await (await fetch('/api/verify', { method: 'POST' })).json(); btn.innerHTML = `✓ ${r.valid||0} valid · ${r.invalid||0} removed`; setTimeout(load, 800); }
+  catch { btn.innerHTML = 'Failed — retry'; }
+  finally { setTimeout(() => { btn.disabled = false; btn.innerHTML = orig; }, 3000); }
 }
 
 async function loadDns() {
@@ -124,7 +153,8 @@ async function loadDns() {
     const d = await (await fetch('/api/dns')).json();
     $('#dns').innerHTML = d.map(r => {
       const ck = (ok, name) => `<span class="ck ${ok?'ok':'no'}">${ok?'✓':'✗'} ${name}</span>`;
-      return `<div class="dnsrow"><span class="dom">${r.domain}</span><div class="checks">${ck(r.mx,'MX')}${ck(r.spf,'SPF')}${ck(r.dmarc,'DMARC')}</div></div>`;
+      const issues = (r.issues && r.issues.length) ? `<div class="issue">⚠ ${r.issues.join(' · ')}</div>` : '';
+      return `<div class="dnsrow" style="flex-direction:column;align-items:stretch;gap:8px"><div style="display:flex;justify-content:space-between;align-items:center"><span class="dom">${r.domain}</span><div class="checks">${ck(r.mx,'MX')}${ck(r.spf,'SPF')}${ck(r.dmarc,'DMARC')}${ck(!r.blocklisted,'Not listed')}</div></div>${issues}</div>`;
     }).join('') || `<div class="emptyfeed">No domains configured yet.</div>`;
   } catch { $('#dns').innerHTML = `<div class="emptyfeed">DNS check unavailable.</div>`; }
 }
@@ -150,6 +180,8 @@ async function load() {
     k.appendChild(kpiCard(I.fire, 'Warmups today', q.warmupDone, `auto-ramping · ${fmt(t.unsubs)} unsubs`));
 
     drawChart(s.daily); funnel(s.leads); inboxes(s.inboxes); feed(s.recent);
+    if (s.listHealth) renderListHealth(s.listHealth); renderProtection(s);
+    const vb = document.getElementById('verifyBtn'); if (vb && !vb._wired) { vb._wired = 1; vb.onclick = () => runVerify(vb); }
 
     const disabled = s.inboxes.filter(i => i.phase === 'disabled').length;
     $('#banner').innerHTML = disabled === s.inboxes.length && s.inboxes.length
