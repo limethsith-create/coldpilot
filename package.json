@@ -1,12 +1,19 @@
 {
   "name": "coldpilot-vercel",
   "version": "1.0.0",
-  "description": "ColdPilot — serverless cold email infrastructure on Vercel",
+  "description": "ColdPilot \u2014 serverless cold email infrastructure on Vercel",
   "private": true,
   "dependencies": {
     "@vercel/kv": "^2.0.0",
     "imapflow": "^1.0.164",
-    "nodemailer": "^6.9.14"
+    "nodemailer": "^6.9.14",
+    "express": "^4.19.2",
+    "localtunnel": "^2.0.2"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "engine": "node worker.js"
+  }
 }

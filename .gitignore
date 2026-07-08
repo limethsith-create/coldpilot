@@ -8,3 +8,6 @@ deploy-out.txt
 build_browserjs.js
 deploy_browser.js
 chunks/
+data-live/
+.deps-ok
+config/inboxes.json

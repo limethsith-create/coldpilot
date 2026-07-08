@@ -1,0 +1,26 @@
+[
+  {
+    "_comment": "ALREADY-WARMED inbox — set prewarmed:true to send at full volume right away",
+    "disabled": false,
+    "prewarmed": true,
+    "connectedDate": "2026-07-09",
+    "name": "Jane Doe",
+    "email": "jane@yourbrand-hq.com",
+    "dailyLimit": 20,
+    "startDailyLimit": 12,
+    "warmupEnabled": true,
+    "smtp": { "host": "smtp.gmail.com", "port": 465, "secure": true, "pass": "your-16-char-app-password" },
+    "imap": { "host": "imap.gmail.com", "port": 993, "pass": "your-16-char-app-password" }
+  },
+  {
+    "_comment": "FRESH inbox — leave prewarmed off; it ramps automatically from warmupStartDate",
+    "disabled": false,
+    "name": "Sam Fox",
+    "email": "sam@getyourbrand.com",
+    "warmupStartDate": "2026-07-09",
+    "dailyLimit": 20,
+    "warmupEnabled": true,
+    "smtp": { "host": "smtp.office365.com", "port": 587, "secure": false, "pass": "your-password" },
+    "imap": { "host": "outlook.office365.com", "port": 993, "pass": "your-password" }
+  }
+]
