@@ -1,0 +1,10 @@
+node_modules
+.vercel
+.env
+.env.local
+*.log
+token.txt
+deploy-out.txt
+build_browserjs.js
+deploy_browser.js
+chunks/

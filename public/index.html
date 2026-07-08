@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ColdPilot — Outreach Dashboard</title>
+<style>
+  :root {
+    --bg: #0b0e14; --panel: #131722; --panel2: #1a1f2e; --border: #232a3b;
+    --text: #e7ecf3; --muted: #8b95a7; --accent: #5b8cff; --green: #3ddc84;
+    --red: #ff5c7a; --yellow: #ffc94d; --purple: #b48cff;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 'Segoe UI', system-ui, sans-serif; padding: 24px; }
+  header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
+  h1 { font-size: 22px; letter-spacing: .5px; }
+  h1 span { color: var(--accent); }
+  #updated { color: var(--muted); font-size: 12px; margin-left: auto; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .card .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .card .value { font-size: 28px; font-weight: 600; margin-top: 4px; }
+  .card .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .panel h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  td { padding: 8px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .pill.warming { background: #3a2f13; color: var(--yellow); }
+  .pill.disabled { background: #2a2f3a; color: var(--muted); }
+  .pill.ramping { background: #16324a; color: var(--accent); }
+  .pill.full { background: #123a26; color: var(--green); }
+  .ok { color: var(--green); } .bad { color: var(--red); } .warn { color: var(--yellow); }
+  .bar { height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+  #chart { width: 100%; height: 180px; }
+  .feed { max-height: 340px; overflow-y: auto; font-size: 12.5px; }
+  .feed div { padding: 6px 4px; border-bottom: 1px solid var(--border); color: var(--muted); }
+  .feed b { color: var(--text); font-weight: 600; }
+  .feed .t-sent b { color: var(--accent); } .feed .t-reply b { color: var(--green); }
+  .feed .t-bounce b, .feed .t-error b, .feed .t-unsubscribe b { color: var(--red); }
+  .feed .t-open b, .feed .t-click b { color: var(--purple); }
+  .feed .t-warmup_sent b, .feed .t-warmup_reply b, .feed .t-warmup_rescued b { color: var(--yellow); }
+  .funnel div { margin-bottom: 10px; }
+  .funnel .row { display: flex; justify-content: space-between; font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cold<span>Pilot</span></h1>
+  <span style="color:var(--muted)">Cold outreach command center</span>
+  <span id="updated">loading…</span>
+</header>
+
+<div id="publicUrl" style="margin:-10px 0 18px 0;font-size:13px"></div>
+
+<div class="cards" id="cards"></div>
+
+<div class="grid">
+  <div class="panel">
+    <h2>Sends &amp; replies — last 30 days</h2>
+    <svg id="chart" viewBox="0 0 600 180" preserveAspectRatio="none"></svg>
+    <div style="display:flex;gap:18px;margin-top:8px;font-size:12px;color:var(--muted)">
+      <span><span style="color:var(--accent)">■</span> sent</span>
+      <span><span style="color:var(--green)">■</span> replies</span>
+      <span><span style="color:var(--red)">■</span> bounces</span>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Lead funnel</h2>
+    <div class="funnel" id="funnel"></div>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom:20px">
+  <h2>Inboxes &amp; warmup</h2>
+  <table id="inboxes">
+    <thead><tr><th>Inbox</th><th>Phase</th><th>Warmup day</th><th>Cold today</th><th>Warmup today</th><th>Total sent</th><th>Replies</th><th>Bounces</th><th>Spam rescued</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <h2>Domain health (SPF / DMARC / MX)</h2>
+    <table id="dns"><thead><tr><th>Domain</th><th>MX</th><th>SPF</th><th>DMARC</th><th>Policy</th></tr></thead><tbody></tbody></table>
+    <p style="color:var(--muted);font-size:12px;margin-top:10px">DKIM is verified at the provider level — check it once with your inbox provider's admin panel + a mail-tester.com send.</p>
+  </div>
+  <div class="panel">
+    <h2>Live activity</h2>
+    <div class="feed" id="feed"></div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmt = n => (n ?? 0).toLocaleString();
+
+function card(label, value, sub, color) {
+  return `<div class="card"><div class="label">${label}</div><div class="value" ${color ? `style="color:var(--${color})"` : ''}>${value}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
+}
+
+function drawChart(daily) {
+  const svg = $('#chart');
+  if (!daily.length) { svg.innerHTML = '<text x="300" y="90" fill="#8b95a7" text-anchor="middle" font-size="13">No sends yet — chart appears once the campaign starts</text>'; return; }
+  const W = 600, H = 180, pad = 4;
+  const max = Math.max(...daily.map(d => d.sent), 5);
+  const bw = (W - pad * 2) / daily.length;
+  let out = '';
+  daily.forEach((d, i) => {
+    const x = pad + i * bw;
+    const sh = (d.sent / max) * (H - 30);
+    const rh = (d.reply / max) * (H - 30);
+    const bh = (d.bounce / max) * (H - 30);
+    out += `<rect x="${x + 1}" y="${H - 20 - sh}" width="${Math.max(bw - 3, 2)}" height="${sh}" fill="#5b8cff" rx="2"><title>${d.date}: ${d.sent} sent</title></rect>`;
+    if (d.reply) out += `<rect x="${x + 1}" y="${H - 20 - rh}" width="${Math.max(bw - 3, 2)}" height="${rh}" fill="#3ddc84" rx="2"><title>${d.date}: ${d.reply} replies</title></rect>`;
+    if (d.bounce) out += `<rect x="${x + 1}" y="${H - 20 - bh}" width="${Math.max((bw - 3) / 2, 2)}" height="${bh}" fill="#ff5c7a" rx="2"><title>${d.date}: ${d.bounce} bounces</title></rect>`;
+  });
+  out += `<text x="${pad}" y="${H - 4}" fill="#8b95a7" font-size="10">${daily[0].date}</text>`;
+  out += `<text x="${W - pad}" y="${H - 4}" fill="#8b95a7" font-size="10" text-anchor="end">${daily[daily.length - 1].date}</text>`;
+  svg.innerHTML = out;
+}
+
+function funnelRow(label, val, total, color) {
+  const pct = total ? Math.round(100 * val / total) : 0;
+  return `<div><div class="row"><span>${label}</span><span>${fmt(val)} (${pct}%)</span></div><div class="bar"><i style="width:${pct}%;background:var(--${color})"></i></div></div>`;
+}
+
+async function refresh() {
+  try {
+    const s = await (await fetch('/api/stats')).json();
+    $('#updated').textContent = 'updated ' + new Date(s.now).toLocaleTimeString();
+    const pu = document.getElementById('publicUrl');
+    const badge = s.storage === 'kv' ? '<span style="color:var(--green)">● live storage</span>' : '<span style="color:var(--yellow)">● snapshot mode (add database for live data)</span>';
+    if (s.publicUrl) { pu.innerHTML = '☁️ <a href="' + s.publicUrl + '" target="_blank" style="color:var(--green)">' + s.publicUrl + '</a> &nbsp;·&nbsp; ' + badge; }
+    else { pu.innerHTML = '☁️ <span style="color:var(--green)">Running on Vercel (serverless)</span> &nbsp;·&nbsp; ' + badge; }
+
+    const t = s.totals, q = s.queueToday;
+    $('#cards').innerHTML =
+      card('Emails sent', fmt(t.sent), `${q.coldDone}/${q.coldPlanned} of today's plan`) +
+      card('Reply rate', t.replyRate + '%', fmt(t.replies) + ' replies', 'green') +
+      card('Bounce rate', t.bounceRate + '%', fmt(t.bounces) + ' bounces', t.bounceRate > 3 ? 'red' : undefined) +
+      card('Opens / Clicks', `${fmt(t.opens)} / ${fmt(t.clicks)}`, 'if tracking enabled') +
+      card('Warmup today', `${q.warmupDone}/${q.warmupPlanned}`, 'auto ramping', 'yellow') +
+      card('Unsubscribes', fmt(t.unsubs), 'honored instantly', t.unsubs ? 'red' : undefined);
+
+    const L = s.leads;
+    $('#funnel').innerHTML =
+      funnelRow('Total leads', L.total, L.total, 'accent') +
+      funnelRow('Queued', L.queued, L.total, 'accent') +
+      funnelRow('In sequence', L.active, L.total, 'purple') +
+      funnelRow('Finished (no reply)', L.finished, L.total, 'yellow') +
+      funnelRow('Replied 🎉', L.replied, L.total, 'green') +
+      funnelRow('Bounced', L.bounced, L.total, 'red') +
+      funnelRow('Unsubscribed', L.unsubscribed, L.total, 'red');
+
+    $('#inboxes tbody').innerHTML = s.inboxes.map(i => `
+      <tr>
+        <td><b>${i.email}</b></td>
+        <td><span class="pill ${i.phase}">${i.phase}</span></td>
+        <td>${i.warmupDay}</td>
+        <td>${i.sentToday}/${i.coldTargetToday}</td>
+        <td>${i.warmupToday}/${i.warmupTargetToday}</td>
+        <td>${fmt(i.totalSent)}</td>
+        <td class="ok">${fmt(i.replies)}</td>
+        <td class="${i.bounces ? 'bad' : ''}">${fmt(i.bounces)}</td>
+        <td class="warn">${fmt(i.rescued)}</td>
+      </tr>`).join('') || '<tr><td colspan="9" style="color:var(--muted)">No inboxes configured</td></tr>';
+
+    drawChart(s.daily);
+
+    $('#feed').innerHTML = s.recent.map(e => {
+      const time = new Date(e.ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const label = { sent: 'SENT', reply: 'REPLY', open: 'OPEN', click: 'CLICK', bounce: 'BOUNCE', unsubscribe: 'UNSUB', warmup_sent: 'WARMUP', warmup_reply: 'WARMUP-RE', warmup_rescued: 'RESCUED', error: 'ERROR', plan: 'PLANNED' }[e.type] || e.type.toUpperCase();
+      const detail = e.type === 'plan' ? `${e.meta?.cold} cold + ${e.meta?.warmup} warmup today`
+        : e.type === 'error' ? `${e.meta?.where}: ${e.meta?.message}`
+        : e.type === 'warmup_rescued' ? `${e.meta?.count} moved out of spam on ${e.inbox}`
+        : `${e.lead || ''} ${e.inbox ? 'via ' + e.inbox : ''}`;
+      return `<div class="t-${e.type}"><b>${label}</b> ${detail} <span style="float:right">${time}</span></div>`;
+    }).join('') || '<div>No activity yet</div>';
+  } catch (e) { $('#updated').textContent = 'server offline — retrying'; }
+}
+
+async function refreshDns() {
+  try {
+    const d = await (await fetch('/api/dns')).json();
+    $('#dns tbody').innerHTML = d.map(r => `
+      <tr><td><b>${r.domain}</b></td>
+        <td class="${r.mx ? 'ok' : 'bad'}">${r.mx ? '✓' : '✗ missing'}</td>
+        <td class="${r.spf ? 'ok' : 'bad'}">${r.spf ? '✓' : '✗ missing'}</td>
+        <td class="${r.dmarc ? 'ok' : 'bad'}">${r.dmarc ? '✓' : '✗ missing'}</td>
+        <td>${r.dmarcPolicy || '—'}</td></tr>`).join('');
+  } catch { }
+}
+
+refresh(); refreshDns();
+setInterval(refresh, 30000);
+setInterval(refreshDns, 10 * 60000);
+</script>
+</body>
+</html>

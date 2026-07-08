@@ -1,0 +1,10 @@
+{
+  "defaultDailyLimit": 20,
+  "sendWindow": { "start": 9, "end": 17 },
+  "sendDays": [1, 2, 3, 4, 5],
+  "openTracking": false,
+  "clickTracking": false,
+  "unsubscribeFooter": true,
+  "footerText": "Your Company - Your Address, Your City",
+  "aiModel": "claude-haiku-4-5-20251001"
+}

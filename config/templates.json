@@ -1,0 +1,18 @@
+{
+  "steps": [
+    {
+      "subject": "{quick question|question} about {{company|your company}}",
+      "body": "{Hey|Hi} {{first_name|there}},\n\n{{ai_first_line}}\n\nI work with businesses like {{company|yours}} to automate the repetitive parts of their operations with AI.\n\n{Would it be worth|Is it worth} a quick 15-minute call to see if this could save your team a few hours a week?\n\nBest,\nYour Name"
+    },
+    {
+      "waitDays": 3,
+      "subject": "Re: {quick question|question} about {{company|your company}}",
+      "body": "{Hey|Hi} {{first_name|there}},\n\nJust floating this back up. If saving time on {{pain_point|repetitive admin work}} isn't a priority right now, no worries at all.\n\nBest,\nYour Name"
+    },
+    {
+      "waitDays": 4,
+      "subject": "last one from me",
+      "body": "{Hey|Hi} {{first_name|there}},\n\nLast note from me. If automating parts of {{company|your business}} ever becomes a priority, my door's open.\n\nBest,\nYour Name"
+    }
+  ]
+}
