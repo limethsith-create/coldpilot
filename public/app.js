@@ -46,10 +46,10 @@ function kpiCard(ic, lbl, val, sub, opts = {}) {
   return el;
 }
 const I = {
-  send:'<svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>',
-  reply:'<svg viewBox="0 0 24 24" fill="none" stroke="#2dd4a7" stroke-width="1.8"><path d="M9 17l-5-5 5-5M4 12h11a5 5 0 015 5v1"/></svg>',
-  bounce:'<svg viewBox="0 0 24 24" fill="none" stroke="#ff5d73" stroke-width="1.8"><path d="M18 6L6 18M6 6l12 12"/></svg>',
-  fire:'<svg viewBox="0 0 24 24" fill="none" stroke="#ffb547" stroke-width="1.8"><path d="M12 2s4 4 4 8a4 4 0 01-8 0c0-1 .5-2 1-3 .5 2 2 2 2 2s-1-3 1-7z"/><path d="M6 14a6 6 0 0012 0"/></svg>',
+  send:'<svg viewBox="0 0 24 24" fill="none" stroke="#5b46ff" stroke-width="1.8"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>',
+  reply:'<svg viewBox="0 0 24 24" fill="none" stroke="#0e9f6e" stroke-width="1.8"><path d="M9 17l-5-5 5-5M4 12h11a5 5 0 015 5v1"/></svg>',
+  bounce:'<svg viewBox="0 0 24 24" fill="none" stroke="#e0344e" stroke-width="1.8"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+  fire:'<svg viewBox="0 0 24 24" fill="none" stroke="#c47a00" stroke-width="1.8"><path d="M12 2s4 4 4 8a4 4 0 01-8 0c0-1 .5-2 1-3 .5 2 2 2 2 2s-1-3 1-7z"/><path d="M6 14a6 6 0 0012 0"/></svg>',
 };
 
 function drawChart(daily) {
@@ -66,23 +66,23 @@ function drawChart(daily) {
   const area = `M${x(0)},${H - pB} L${daily.map((d, i) => `${x(i)},${y(d.sent)}`).join(' L')} L${x(daily.length - 1)},${H - pB} Z`;
   const replyPts = daily.map((d, i) => `${x(i)},${y(d.reply)}`).join(' ');
   let bars = '';
-  daily.forEach((d, i) => { if (d.bounce) bars += `<rect x="${x(i) - 3}" y="${y(d.bounce)}" width="6" height="${H - pB - y(d.bounce)}" rx="2" fill="#ff5d73" opacity=".8"/>`; });
+  daily.forEach((d, i) => { if (d.bounce) bars += `<rect x="${x(i) - 3}" y="${y(d.bounce)}" width="6" height="${H - pB - y(d.bounce)}" rx="2" fill="#e0344e" opacity=".85"/>`; });
   let gl = '';
   for (let g = 0; g <= 3; g++) { const yy = pT + g * ((H - pT - pB) / 3); gl += `<line x1="${pL}" y1="${yy}" x2="${W - pL}" y2="${yy}" stroke="var(--line)" stroke-dasharray="2 4"/>`; }
   wrap.innerHTML = `<svg id="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
     <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7c6cff" stop-opacity=".45"/><stop offset="1" stop-color="#7c6cff" stop-opacity="0"/></linearGradient></defs>
     ${gl}${bars}
     <path d="${area}" fill="url(#ag)"/>
-    <polyline points="${linePts}" fill="none" stroke="#7c6cff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="${replyPts}" fill="none" stroke="#2dd4a7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    ${daily.map((d,i)=>`<circle cx="${x(i)}" cy="${y(d.sent)}" r="2.5" fill="#0b0d14" stroke="#7c6cff" stroke-width="2"><title>${d.date}: ${d.sent} sent, ${d.reply} replies</title></circle>`).join('')}
+    <polyline points="${linePts}" fill="none" stroke="#5b46ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="${replyPts}" fill="none" stroke="#0e9f6e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${daily.map((d,i)=>`<circle cx="${x(i)}" cy="${y(d.sent)}" r="2.5" fill="#5b46ff" stroke="#ffffff" stroke-width="1.5"><title>${d.date}: ${d.sent} sent, ${d.reply} replies</title></circle>`).join('')}
   </svg>`;
 }
 
 function funnel(L) {
   const rows = [
-    ['Total leads', L.total, '#7c6cff'], ['Queued', L.queued, '#4cc2ff'], ['In sequence', L.active, '#a78bfa'],
-    ['Finished · no reply', L.finished, '#ffb547'], ['Replied', L.replied, '#2dd4a7'], ['Bounced', L.bounced, '#ff5d73'], ['Unsubscribed', L.unsubscribed, '#ff5d73'],
+    ['Total leads', L.total, '#5b46ff'], ['Queued', L.queued, '#1f7fe0'], ['In sequence', L.active, '#7358ff'],
+    ['Finished · no reply', L.finished, '#c47a00'], ['Replied', L.replied, '#0e9f6e'], ['Bounced', L.bounced, '#e0344e'], ['Unsubscribed', L.unsubscribed, '#e0344e'],
   ];
   const max = Math.max(L.total, 1);
   $('#funnel').innerHTML = rows.map(([n, v, c]) => `
@@ -98,7 +98,7 @@ function ring(pct, color) {
 
 function inboxes(list) {
   $('#ibxCount').textContent = `${list.filter(i=>i.phase!=='disabled').length} active · ${list.length} total`;
-  const colorFor = p => p === 'full' ? '#2dd4a7' : p === 'ramping' ? '#4cc2ff' : p === 'warming' ? '#ffb547' : p === 'paused' ? '#ff5d73' : '#59617a';
+  const colorFor = p => p === 'full' ? '#0e9f6e' : p === 'ramping' ? '#1f7fe0' : p === 'warming' ? '#c47a00' : p === 'paused' ? '#e0344e' : '#8b93a8';
   $('#inboxes').innerHTML = list.map(i => {
     const pct = i.phase === 'disabled' ? 0 : Math.min(1, i.warmupDay / 42);
     const col = colorFor(i.phase);
@@ -123,7 +123,7 @@ function feed(events) {
 function renderListHealth(lh) {
   const el = document.getElementById('listHealth'); if (!el) return;
   const total = lh.valid + lh.risky + lh.invalid + lh.unchecked;
-  const seg = [['valid','#2dd4a7',lh.valid],['risky','#ffb547',lh.risky],['invalid','#ff5d73',lh.invalid],['unchecked','#59617a',lh.unchecked]];
+  const seg = [['valid','#0e9f6e',lh.valid],['risky','#c47a00',lh.risky],['invalid','#e0344e',lh.invalid],['unchecked','#8b93a8',lh.unchecked]];
   if (!total) { el.innerHTML = '<div class="emptyfeed">Import a lead list, then click <b>Verify list</b> to screen every address before sending — this is what keeps inboxes off the ban list.</div>'; return; }
   el.innerHTML = '<div class="seg">' + seg.map(([n,c,v]) => v ? `<i style="width:${100*v/total}%;background:${c}" title="${n}: ${v}"></i>` : '').join('') + '</div>' +
     seg.map(([n,c,v]) => `<div class="hl"><span><span class="dot" style="background:${c}"></span>${n[0].toUpperCase()+n.slice(1)}</span><b>${fmt(v)}</b></div>`).join('') +
@@ -162,7 +162,7 @@ async function loadDns() {
 async function load() {
   try {
     const s = await (await fetch('/api/stats')).json();
-    $('#updated').innerHTML = `<span class="dot" style="background:var(--accent);box-shadow:0 0 8px var(--accent)"></span>${new Date(s.now).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
+    $('#updated').innerHTML = `<span class="dot" style="background:var(--accent)"></span>${new Date(s.now).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
     $('#statusLine').textContent = s.publicUrl ? 'Live · Vercel' : 'Live · Vercel';
     $('#storageLine').textContent = s.storage === 'kv' ? 'persistent storage' : 'snapshot mode';
 
